@@ -10,20 +10,26 @@ import (
 func initTime() models.Time {
     t := models.Time{}
     t.Status = true
-    t.Span = 700
     return t
 }
 
 //タイマーイベント
-func timerLoop(tch chan models.Time, pch chan models.Piece) {
+func timerLoop(tch chan models.Time, span int, stopCh chan bool, doneCh chan bool) {
+    defer func() { doneCh <- true }()
+
     t := initTime()
-    timer := time.NewTicker(time.Duration(t.Span) * time.Millisecond)
-    tch <- t
+    timer := time.NewTicker(time.Duration(span) * time.Millisecond)
     for {
-        select{
+        select {
         case <-timer.C:
             t.Status = true
             tch <- t
+            break
+        case <-stopCh:
+            timer.Stop()
+            return
+        default:
         }
     }
+    timer.Stop()
 }

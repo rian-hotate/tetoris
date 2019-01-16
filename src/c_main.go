@@ -124,11 +124,14 @@ func rotationPiece(p models.Piece) models.Piece {
                 f = true
             }
         }
+        if p.TargetOccupancy[j].X == 0 || p.TargetOccupancy[j].X == models.WIDTH || p.TargetOccupancy[j].Y == models.HEIGHT || p.TargetOccupancy[j].Y == 4 {
+            f = true
+        }
     }
     if f {
         p.Wait = false
         for i:= range p.TargetOccupancy {
-            if (i != 0) {
+            if i != 0 {
                 x := p.TargetOccupancy[i].X - p.TargetOccupancy[0].X
                 y := p.TargetOccupancy[i].Y - p.TargetOccupancy[0].Y
                 p.TargetOccupancy[i].X = cos*x + sin*y + p.TargetOccupancy[0].X
@@ -204,7 +207,7 @@ func checkRow(p models.Piece) models.Piece {
     for key, value := range row {
         if value == models.WIDTH-1 {
             for j := range p.Occupancy {
-                if (p.Occupancy[j].Y < key) {
+                if (p.Occupancy[j].Y <= key) {
                     p.Occupancy[j].Y++
                 }
             }
@@ -225,7 +228,11 @@ func deleteElement(target []models.Point, element models.Point) []models.Point {
     return ret
 }
 
-func controller(pch chan models.Piece, kch chan termbox.Key, tch chan models.Time) {
+func controller(pch chan models.Piece, kch chan termbox.Key) {
+    stopCh := make(chan bool)
+    doneCh := make(chan bool)
+    tch := make(chan models.Time)
+
     p := initGame()
     for {
         select {
@@ -238,6 +245,7 @@ func controller(pch chan models.Piece, kch chan termbox.Key, tch chan models.Tim
                 return
             case termbox.KeySpace, termbox.KeyEnter: //ゲームスタート
                 p.End = false
+                go timerLoop(tch, 700, stopCh, doneCh)
                 break
             case termbox.KeyArrowLeft: //ひだり
                 f := true
@@ -354,9 +362,20 @@ func controller(pch chan models.Piece, kch chan termbox.Key, tch chan models.Tim
                 p = initGame()
             }
             p.Wait = false
+            span := 700 - p.Score/10
+            if span < 100 {
+                span = 100
+            }
             models.Mu.Unlock()
             pch <- p
+
+            stopCh <- true
+            <-doneCh
+
+            go timerLoop(tch, span, stopCh, doneCh)
+            break
         default:
+            pch <- p
             break
         }
 

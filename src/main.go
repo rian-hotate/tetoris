@@ -13,13 +13,11 @@ func main() {
 
     pieceCh := make(chan models.Piece)
     keyCh := make(chan termbox.Key)
-    timerCh := make(chan models.Time)
 
     go drawLoop(pieceCh)
     go keyEventLoop(keyCh)
-    go timerLoop(timerCh, pieceCh)
 
-    controller(pieceCh, keyCh, timerCh)
+    controller(pieceCh, keyCh)
     termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
     defer termbox.Close()
 }
