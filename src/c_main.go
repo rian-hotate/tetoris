@@ -244,8 +244,10 @@ func controller(pch chan models.Piece, kch chan termbox.Key) {
                 models.Mu.Unlock()
                 return
             case termbox.KeySpace, termbox.KeyEnter: //ゲームスタート
-                p.End = false
-                go timerLoop(tch, 700, stopCh, doneCh)
+                if p.End {
+                    go timerLoop(tch, 700, stopCh, doneCh)
+                    p.End = false
+                }
                 break
             case termbox.KeyArrowLeft: //ひだり
                 f := true
@@ -358,21 +360,23 @@ func controller(pch chan models.Piece, kch chan termbox.Key) {
                         p.TargetOccupancy[i].Y += p.Vector.Y
                     }
                 }
+                span := 700 - p.Score/10
+                if span < 100 {
+                    span = 100
+                }
+
+                stopCh <- true
+                <-doneCh
+                go timerLoop(tch, span, stopCh, doneCh)
             } else if p.End == true {
                 p = initGame()
+                stopCh <- false
+                <-doneCh
             }
             p.Wait = false
-            span := 700 - p.Score/10
-            if span < 100 {
-                span = 100
-            }
             models.Mu.Unlock()
             pch <- p
 
-            stopCh <- true
-            <-doneCh
-
-            go timerLoop(tch, span, stopCh, doneCh)
             break
         default:
             pch <- p
