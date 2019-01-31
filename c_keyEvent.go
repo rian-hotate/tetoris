@@ -1,7 +1,7 @@
 package main
 
 import (
-    "github.com/nsf/termbox-go"
+	"github.com/nsf/termbox-go"
 )
 
 //キーイベント
@@ -14,5 +14,3 @@ func keyEventLoop(kch chan termbox.Key) {
 		}
 	}
 }
-
-
