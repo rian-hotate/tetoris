@@ -1,23 +1,20 @@
 package main
 
 import (
-	"github.com/nsf/termbox-go"
-	models "github.com/rian-hotate/tetoris/models/tetoris"
+    "github.com/nsf/termbox-go"
 )
 
 func main() {
-	err := termbox.Init()
-	if err != nil {
-		panic(err)
-	}
+    err := termbox.Init()
+    if err != nil {
+        panic(err)
+    }
 
-	pieceCh := make(chan models.Piece)
-	keyCh := make(chan termbox.Key)
+    keyCh := make(chan termbox.Key)
 
-	go drawLoop(pieceCh)
-	go keyEventLoop(keyCh)
+    go keyEventLoop(keyCh)
 
-	controller(pieceCh, keyCh)
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	defer termbox.Close()
+    controller(keyCh)
+    termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+    defer termbox.Close()
 }

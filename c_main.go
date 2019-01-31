@@ -1,11 +1,10 @@
 package main
 
 import (
-	"math/rand"
-	"time"
-
 	"github.com/nsf/termbox-go"
 	models "github.com/rian-hotate/tetoris/models/tetoris"
+	"math/rand"
+	"time"
 )
 
 //初期化
@@ -14,8 +13,8 @@ func initGame() models.Piece {
 	p.Vector.X, p.Vector.Y = 0, 1
 	p.TargetOccupancy = initPiece(p)
 	p.Occupancy = []models.Point{}
+	p.Span = 700
 	p.Score = 0
-	p.Wait = false
 	return p
 }
 
@@ -105,11 +104,10 @@ func initPiece(p models.Piece) []models.Point {
 }
 
 //テトリミノ回転
-func rotationPiece(p models.Piece) models.Piece {
+func rotationPiece(p models.Piece) (models.Piece, bool) {
 	cos := 0
 	sin := 1
 
-	p.Wait = true
 	for i := range p.TargetOccupancy {
 		if i != 0 {
 			x := p.TargetOccupancy[i].X - p.TargetOccupancy[0].X
@@ -130,7 +128,6 @@ func rotationPiece(p models.Piece) models.Piece {
 		}
 	}
 	if f {
-		p.Wait = false
 		for i := range p.TargetOccupancy {
 			if i != 0 {
 				x := p.TargetOccupancy[i].X - p.TargetOccupancy[0].X
@@ -141,7 +138,7 @@ func rotationPiece(p models.Piece) models.Piece {
 		}
 	}
 
-	return p
+	return p, f
 }
 
 //当たり判定
@@ -203,6 +200,10 @@ func checkRow(p models.Piece) models.Piece {
 		if p.HighScore < p.Score {
 			p.HighScore = p.Score
 		}
+		p.Span = 700 - p.Score/1
+		if p.Span < 100 {
+			p.Span = 100
+		}
 	}
 
 	for key, value := range row {
@@ -229,25 +230,23 @@ func deleteElement(target []models.Point, element models.Point) []models.Point {
 	return ret
 }
 
-func controller(pch chan models.Piece, kch chan termbox.Key) {
-	stopCh := make(chan bool)
-	doneCh := make(chan bool)
-	tch := make(chan models.Time)
-
+func controller(kch chan termbox.Key) {
 	p := initGame()
+	drawInit(p)
+	var timer time.Ticker
 	for {
 		select {
 		case k := <-kch: //キーイベント
-			models.Mu.Lock()
 			switch k {
 			case termbox.KeyEsc, termbox.KeyCtrlC: //ゲーム終了
+				timer.Stop()
 				p.End = true
-				models.Mu.Unlock()
 				return
 			case termbox.KeySpace, termbox.KeyEnter: //ゲームスタート
 				if p.End {
-					go timerLoop(tch, 700, stopCh, doneCh)
 					p.End = false
+					timer = *time.NewTicker(time.Duration(700) * time.Millisecond)
+					drawPiece(p)
 				}
 				break
 			case termbox.KeyArrowLeft: //ひだり
@@ -256,25 +255,23 @@ func controller(pch chan models.Piece, kch chan termbox.Key) {
 					if f {
 						if p.TargetOccupancy[i].X <= 1 {
 							f = false
-							break
 						} else {
 							for j := range p.Occupancy {
 								if p.TargetOccupancy[i].X == p.Occupancy[j].X+1 && p.TargetOccupancy[i].Y == p.Occupancy[j].Y {
 									f = false
-									break
 								}
 							}
 						}
-					} else {
-						break
 					}
 				}
 				if f {
 					for i := range p.TargetOccupancy {
 						p.TargetOccupancy[i].X--
 					}
-					p.Wait = true
+					timer.Stop()
+					timer = *time.NewTicker(time.Duration(p.Span) * time.Millisecond)
 				}
+				drawPiece(p)
 				break
 			case termbox.KeyArrowRight: //みぎ
 				f := true
@@ -282,25 +279,23 @@ func controller(pch chan models.Piece, kch chan termbox.Key) {
 					if f {
 						if p.TargetOccupancy[i].X >= models.WIDTH-1 {
 							f = false
-							break
 						} else {
 							for j := range p.Occupancy {
 								if p.TargetOccupancy[i].X == p.Occupancy[j].X-1 && p.TargetOccupancy[i].Y == p.Occupancy[j].Y {
 									f = false
-									break
 								}
 							}
 						}
-					} else {
-						break
 					}
 				}
 				if f {
 					for i := range p.TargetOccupancy {
 						p.TargetOccupancy[i].X++
 					}
-					p.Wait = true
+					timer.Stop()
+					timer = *time.NewTicker(time.Duration(p.Span) * time.Millisecond)
 				}
+				drawPiece(p)
 				break
 			case termbox.KeyArrowDown: //した
 				f := true
@@ -308,52 +303,51 @@ func controller(pch chan models.Piece, kch chan termbox.Key) {
 					if f {
 						if p.TargetOccupancy[i].Y >= models.HEIGHT-1 {
 							f = false
-							break
 						} else {
 							for j := range p.Occupancy {
 								if p.TargetOccupancy[i].X == p.Occupancy[j].X && p.TargetOccupancy[i].Y == p.Occupancy[j].Y-1 {
 									f = false
-									break
 								}
 							}
 						}
-					} else {
-						break
 					}
 				}
 				if f {
 					for i := range p.TargetOccupancy {
 						p.TargetOccupancy[i].Y++
 					}
+					timer.Stop()
+					timer = *time.NewTicker(time.Duration(p.Span) * time.Millisecond)
 				}
+				drawPiece(p)
 				break
-			case termbox.KeyArrowUp: //した
-				p = rotationPiece(p)
+			case termbox.KeyArrowUp: //うえ
+				var f bool
+				p, f = rotationPiece(p)
+				if !f {
+					timer.Stop()
+					timer = *time.NewTicker(time.Duration(p.Span) * time.Millisecond)
+				}
+				drawPiece(p)
 				break
 			}
-			models.Mu.Unlock()
-			pch <- p
 			break
-		case <-tch: //タイマーイベント
-			models.Mu.Lock()
+		case <-timer.C: //タイマーイベント
+			timer.Stop()
 			p = checkCollision(p)
-			if p.End == false && p.Wait == false {
+			if p.End == false {
 				f := true
 				for i := range p.TargetOccupancy {
 					if f {
 						if p.TargetOccupancy[i].Y >= models.HEIGHT-1 {
 							f = false
-							break
 						} else {
 							for j := range p.Occupancy {
 								if p.TargetOccupancy[i].X == p.Occupancy[j].X && p.TargetOccupancy[i].Y == p.Occupancy[j].Y-1 {
 									f = false
-									break
 								}
 							}
 						}
-					} else {
-						break
 					}
 				}
 				if f {
@@ -361,26 +355,15 @@ func controller(pch chan models.Piece, kch chan termbox.Key) {
 						p.TargetOccupancy[i].Y += p.Vector.Y
 					}
 				}
-				span := 700 - p.Score/10
-				if span < 100 {
-					span = 100
-				}
 
-				stopCh <- true
-				<-doneCh
-				go timerLoop(tch, span, stopCh, doneCh)
+				drawPiece(p)
+				timer = *time.NewTicker(time.Duration(p.Span) * time.Millisecond)
 			} else if p.End == true {
 				p = initGame()
-				stopCh <- false
-				<-doneCh
+				drawInit(p)
 			}
-			p.Wait = false
-			models.Mu.Unlock()
-			pch <- p
-
 			break
 		default:
-			pch <- p
 			break
 		}
 
