@@ -21,13 +21,8 @@ type Piece struct {
     Occupancy       []Point
     TargetType      int
     TargetOccupancy []Point
-    Wait            bool
+    Span            int
     Score           int
     HighScore       int
     End             bool
-}
-
-type Time struct {
-    Status bool
-    Span   int
 }
