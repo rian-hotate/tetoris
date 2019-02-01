@@ -230,7 +230,23 @@ func deleteElement(target []models.Point, element models.Point) []models.Point {
 	return ret
 }
 
-func controller(kch chan termbox.Key) {
+type Game struct {
+}
+
+func NewGame() *Game {
+	return &Game{}
+}
+func (g *Game) init() error {
+	return termbox.Init()
+}
+func (g *Game) close() {
+	termbox.Close()
+}
+func (g *Game) run() {
+	kch := make(chan termbox.Key)
+
+	go keyEventLoop(kch)
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	p := initGame()
 	drawInit(p)
 	var timer time.Ticker

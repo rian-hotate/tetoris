@@ -1,20 +1,14 @@
 package main
 
-import (
-    "github.com/nsf/termbox-go"
-)
+import ()
 
 func main() {
-    err := termbox.Init()
-    if err != nil {
-        panic(err)
-    }
+	g := NewGame()
+	err := g.init()
+	if err != nil {
+		panic(err)
+	}
+	defer g.close()
 
-    keyCh := make(chan termbox.Key)
-
-    go keyEventLoop(keyCh)
-
-    controller(keyCh)
-    termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-    defer termbox.Close()
+	g.run()
 }
