@@ -1,10 +1,10 @@
 package rtc
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/pions/webrtc"
 	"github.com/pions/webrtc/examples/util"
@@ -42,9 +42,6 @@ func (s *TetorisRTCSession) init() {
 	s.peerConnection = newPeerConnection()
 }
 
-func (s *TetorisRTCSession) offer() {
-
-}
 func (s *TetorisRTCSession) stopConnection() {
 	s.stop <- true
 }
@@ -55,7 +52,6 @@ func (s *TetorisRTCSession) answer() {
 	s.peerConnection.OnDataChannel(func(d *webrtc.RTCDataChannel) {
 		fmt.Printf("New DataChannel %s %d\n", d.Label, d.ID)
 		d.OnOpen(func() {
-			}
 		})
 
 		// Register message handling
@@ -63,7 +59,7 @@ func (s *TetorisRTCSession) answer() {
 		})
 	})
 
-	offerChan, answerChan := mustSignalViaHTTP(*s.addr)
+	offerChan, answerChan := answerSignalViaHTTP(":50000")
 
 	offer := <-offerChan
 
@@ -78,7 +74,7 @@ func (s *TetorisRTCSession) answer() {
 	<-s.stop
 }
 
-func mustSignalViaHTTP(address string) (offerOut chan webrtc.RTCSessionDescription, answerIn chan webrtc.RTCSessionDescription) {
+func answerSignalViaHTTP(address string) (offerOut chan webrtc.RTCSessionDescription, answerIn chan webrtc.RTCSessionDescription) {
 	offerOut = make(chan webrtc.RTCSessionDescription)
 	answerIn = make(chan webrtc.RTCSessionDescription)
 
@@ -99,4 +95,46 @@ func mustSignalViaHTTP(address string) (offerOut chan webrtc.RTCSessionDescripti
 	fmt.Println("Listening on", address)
 
 	return
+}
+
+func (s *TetorisRTCSession) offer() {
+	dataChannel, err := s.peerConnection.CreateDataChannel("data", nil)
+	util.Check(err)
+
+	s.peerConnection.OnICEConnectionStateChange(func(connectionState ice.ConnectionState) {
+		fmt.Printf("ICE Connection State has changed: %s\n", connectionState.String())
+	})
+
+	dataChannel.OnOpen(func() {
+	})
+
+	dataChannel.OnMessage(func(payload datachannel.Payload) {
+	})
+
+	offer, err := s.peerConnection.CreateOffer(nil)
+	util.Check(err)
+
+	answer := offerSignalViaHTTP(offer, ":50000")
+
+	err = s.peerConnection.SetRemoteDescription(answer)
+	util.Check(err)
+
+	<-s.stop
+
+}
+
+func offerSignalViaHTTP(offer webrtc.RTCSessionDescription, address string) webrtc.RTCSessionDescription {
+	b := new(bytes.Buffer)
+	err := json.NewEncoder(b).Encode(offer)
+	util.Check(err)
+
+	resp, err := http.Post("http://"+address, "application/json; charset=utf-8", b)
+	util.Check(err)
+	defer resp.Body.Close()
+
+	var answer webrtc.RTCSessionDescription
+	err = json.NewDecoder(resp.Body).Decode(&answer)
+	util.Check(err)
+
+	return answer
 }
