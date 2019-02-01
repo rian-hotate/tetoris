@@ -23,6 +23,5 @@ type Piece struct {
 	TargetOccupancy []Point
 	Span            int
 	Score           int
-	HighScore       int
 	End             bool
 }
