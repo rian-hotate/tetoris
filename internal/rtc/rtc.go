@@ -37,15 +37,15 @@ func NewWebRTC() *TetorisRTCSession {
 	return &TetorisRTCSession{}
 }
 
-func (s *TetorisRTCSession) init() {
+func (s *TetorisRTCSession) Init() {
 	s.addr = ":50000"
 	s.peerConnection = newPeerConnection()
 }
 
-func (s *TetorisRTCSession) stopConnection() {
+func (s *TetorisRTCSession) StopConnection() {
 	s.stop <- true
 }
-func (s *TetorisRTCSession) answer() {
+func (s *TetorisRTCSession) Answer() {
 	s.peerConnection.OnICEConnectionStateChange(func(connectionState ice.ConnectionState) {
 		fmt.Printf("ICE Connection State has changed: %s\n", connectionState.String())
 	})
@@ -97,7 +97,7 @@ func answerSignalViaHTTP(address string) (offerOut chan webrtc.RTCSessionDescrip
 	return
 }
 
-func (s *TetorisRTCSession) offer() {
+func (s *TetorisRTCSession) Offer() {
 	dataChannel, err := s.peerConnection.CreateDataChannel("data", nil)
 	util.Check(err)
 
