@@ -270,7 +270,7 @@ func (g *Game) run() {
                 }
                 break
             case termbox.KeyArrowLeft: //ひだり
-                if g.p.piece.End {
+                if !g.p.piece.End {
                     f := true
                     for i := range g.p.piece.TargetOccupancy {
                         if f {
