@@ -8,32 +8,32 @@ import (
 )
 
 //初期化
-func (g *Game) initGame() {
-    g.p = models.Piece{End: true}
-    g.p.Vector.X, g.p.Vector.Y = 0, 1
-    g.initPiece()
-    g.p.Occupancy = []models.Point{}
-    g.p.Span = 700
-    g.p.Score = 0
+func (p *Piece) initGame() {
+    p.piece.End = true
+    p.piece.Vector.X, p.piece.Vector.Y = 0, 1
+    p.initPiece()
+    p.piece.Occupancy = []models.Point{}
+    p.piece.Span = 700
+    p.piece.Score = 0
 }
 
 //テトリミノ初期化
-func (g *Game) initPiece() {
+func (p *Piece) initPiece() {
     rand.Seed(time.Now().UnixNano())
-    g.p.TargetType = rand.Intn(7)
+    p.piece.TargetType = rand.Intn(7)
     piece := []models.Point{}
 
-    if g.p.TargetType == 0 {
+    if p.piece.TargetType == 0 {
         for i := 0; i < 2; i++ {
             for j := 0; j < 2; j++ {
                 piece = append(piece, models.Point{X: (models.WIDTH / 2) + j, Y: 5 + i})
             }
         }
-    } else if g.p.TargetType == 1 {
+    } else if p.piece.TargetType == 1 {
         for i := 0; i < 4; i++ {
             piece = append(piece, models.Point{X: (models.WIDTH / 2), Y: 5 + i})
         }
-    } else if g.p.TargetType == 2 {
+    } else if p.piece.TargetType == 2 {
         for i := 0; i < 2; i++ {
             for j := 0; j < 3; j++ {
                 if i == 0 {
@@ -45,7 +45,7 @@ func (g *Game) initPiece() {
                 }
             }
         }
-    } else if g.p.TargetType == 3 {
+    } else if p.piece.TargetType == 3 {
         for i := 0; i < 2; i++ {
             for j := 0; j < 3; j++ {
                 if i == 0 {
@@ -59,7 +59,7 @@ func (g *Game) initPiece() {
                 }
             }
         }
-    } else if g.p.TargetType == 4 {
+    } else if p.piece.TargetType == 4 {
         for i := 0; i < 2; i++ {
             for j := 0; j < 3; j++ {
                 if i == 0 {
@@ -73,7 +73,7 @@ func (g *Game) initPiece() {
                 }
             }
         }
-    } else if g.p.TargetType == 5 {
+    } else if p.piece.TargetType == 5 {
         for i := 0; i < 3; i++ {
             for j := 0; j < 2; j++ {
                 if i == 0 {
@@ -85,7 +85,7 @@ func (g *Game) initPiece() {
                 }
             }
         }
-    } else if g.p.TargetType == 6 {
+    } else if p.piece.TargetType == 6 {
         for i := 0; i < 3; i++ {
             for j := 0; j < 2; j++ {
                 if i == 0 {
@@ -99,40 +99,40 @@ func (g *Game) initPiece() {
         }
     }
 
-    g.p.TargetOccupancy = piece
+    p.piece.TargetOccupancy = piece
 }
 
 //テトリミノ回転
-func (g *Game) rotationPiece() bool {
+func (p *Piece) rotationPiece() bool {
     cos := 0
     sin := 1
 
-    for i := range g.p.TargetOccupancy {
+    for i := range p.piece.TargetOccupancy {
         if i != 0 {
-            x := g.p.TargetOccupancy[i].X - g.p.TargetOccupancy[0].X
-            y := g.p.TargetOccupancy[i].Y - g.p.TargetOccupancy[0].Y
-            g.p.TargetOccupancy[i].X = cos*x - sin*y + g.p.TargetOccupancy[0].X
-            g.p.TargetOccupancy[i].Y = sin*x + cos*y + g.p.TargetOccupancy[0].Y
+            x := p.piece.TargetOccupancy[i].X - p.piece.TargetOccupancy[0].X
+            y := p.piece.TargetOccupancy[i].Y - p.piece.TargetOccupancy[0].Y
+            p.piece.TargetOccupancy[i].X = cos*x - sin*y + p.piece.TargetOccupancy[0].X
+            p.piece.TargetOccupancy[i].Y = sin*x + cos*y + p.piece.TargetOccupancy[0].Y
         }
     }
     f := false
-    for j := range g.p.TargetOccupancy {
-        for k := range g.p.Occupancy {
-            if g.p.TargetOccupancy[j].X == g.p.Occupancy[k].X && g.p.TargetOccupancy[j].Y == g.p.Occupancy[k].Y {
+    for j := range p.piece.TargetOccupancy {
+        for k := range p.piece.Occupancy {
+            if p.piece.TargetOccupancy[j].X == p.piece.Occupancy[k].X && p.piece.TargetOccupancy[j].Y == p.piece.Occupancy[k].Y {
                 f = true
             }
         }
-        if g.p.TargetOccupancy[j].X == 0 || g.p.TargetOccupancy[j].X == models.WIDTH || g.p.TargetOccupancy[j].Y == models.HEIGHT || g.p.TargetOccupancy[j].Y == 4 {
+        if p.piece.TargetOccupancy[j].X == 0 || p.piece.TargetOccupancy[j].X == models.WIDTH || p.piece.TargetOccupancy[j].Y == models.HEIGHT || p.piece.TargetOccupancy[j].Y == 4 {
             f = true
         }
     }
     if f {
-        for i := range g.p.TargetOccupancy {
+        for i := range p.piece.TargetOccupancy {
             if i != 0 {
-                x := g.p.TargetOccupancy[i].X - g.p.TargetOccupancy[0].X
-                y := g.p.TargetOccupancy[i].Y - g.p.TargetOccupancy[0].Y
-                g.p.TargetOccupancy[i].X = cos*x + sin*y + g.p.TargetOccupancy[0].X
-                g.p.TargetOccupancy[i].Y = -sin*x + cos*y + g.p.TargetOccupancy[0].Y
+                x := p.piece.TargetOccupancy[i].X - p.piece.TargetOccupancy[0].X
+                y := p.piece.TargetOccupancy[i].Y - p.piece.TargetOccupancy[0].Y
+                p.piece.TargetOccupancy[i].X = cos*x + sin*y + p.piece.TargetOccupancy[0].X
+                p.piece.TargetOccupancy[i].Y = -sin*x + cos*y + p.piece.TargetOccupancy[0].Y
             }
         }
     }
@@ -141,15 +141,15 @@ func (g *Game) rotationPiece() bool {
 }
 
 //当たり判定
-func (g *Game) checkCollision() {
+func (p *Piece) checkCollision() {
     occupantion := false
-    for i := range g.p.TargetOccupancy {
-        if g.p.TargetOccupancy[i].Y >= models.HEIGHT-1 {
+    for i := range p.piece.TargetOccupancy {
+        if p.piece.TargetOccupancy[i].Y >= models.HEIGHT-1 {
             occupantion = true
             break
         } else {
-            for j := range g.p.Occupancy {
-                if g.p.TargetOccupancy[i].X == g.p.Occupancy[j].X && g.p.TargetOccupancy[i].Y+1 == g.p.Occupancy[j].Y {
+            for j := range p.piece.Occupancy {
+                if p.piece.TargetOccupancy[i].X == p.piece.Occupancy[j].X && p.piece.TargetOccupancy[i].Y+1 == p.piece.Occupancy[j].Y {
                     occupantion = true
                     break
                 }
@@ -157,54 +157,54 @@ func (g *Game) checkCollision() {
         }
     }
     if occupantion {
-        for i := range g.p.TargetOccupancy {
-            g.p.Occupancy = append(g.p.Occupancy, g.p.TargetOccupancy[i])
+        for i := range p.piece.TargetOccupancy {
+            p.piece.Occupancy = append(p.piece.Occupancy, p.piece.TargetOccupancy[i])
         }
-        g.initPiece()
+        p.initPiece()
     }
 
-    g.checkRow()
+    p.checkRow()
 
-    for j := range g.p.TargetOccupancy {
-        for k := range g.p.Occupancy {
-            if g.p.TargetOccupancy[j].X == g.p.Occupancy[k].X && g.p.TargetOccupancy[j].Y == g.p.Occupancy[k].Y {
-                g.p.End = true
+    for j := range p.piece.TargetOccupancy {
+        for k := range p.piece.Occupancy {
+            if p.piece.TargetOccupancy[j].X == p.piece.Occupancy[k].X && p.piece.TargetOccupancy[j].Y == p.piece.Occupancy[k].Y {
+                p.piece.End = true
             }
         }
     }
 }
 
 //行占有判定
-func (g *Game) checkRow() {
+func (p *Piece) checkRow() {
     row := map[int]int{}
-    for i := range g.p.Occupancy {
-        row[g.p.Occupancy[i].Y]++
+    for i := range p.piece.Occupancy {
+        row[p.piece.Occupancy[i].Y]++
     }
     deleteTarget := []models.Point{}
     for key, value := range row {
         if value == models.WIDTH-1 {
-            for j := range g.p.Occupancy {
-                if g.p.Occupancy[j].Y == key {
-                    deleteTarget = append(deleteTarget, g.p.Occupancy[j])
+            for j := range p.piece.Occupancy {
+                if p.piece.Occupancy[j].Y == key {
+                    deleteTarget = append(deleteTarget, p.piece.Occupancy[j])
                 }
             }
         }
     }
 
     for k := range deleteTarget {
-        g.p.Occupancy = deleteElement(g.p.Occupancy, deleteTarget[k])
-        g.p.Score += 5
-        g.p.Span = 700 - g.p.Score/1
-        if g.p.Span < 100 {
-            g.p.Span = 100
+        p.piece.Occupancy = deleteElement(p.piece.Occupancy, deleteTarget[k])
+        p.piece.Score += 5
+        p.piece.Span = 700 - p.piece.Score/1
+        if p.piece.Span < 100 {
+            p.piece.Span = 100
         }
     }
 
     for key, value := range row {
         if value == models.WIDTH-1 {
-            for j := range g.p.Occupancy {
-                if g.p.Occupancy[j].Y <= key {
-                    g.p.Occupancy[j].Y++
+            for j := range p.piece.Occupancy {
+                if p.piece.Occupancy[j].Y <= key {
+                    p.piece.Occupancy[j].Y++
                 }
             }
         }
@@ -223,13 +223,23 @@ func deleteElement(target []models.Point, element models.Point) []models.Point {
 }
 
 type Game struct {
-    p models.Piece
+    p *Piece
+}
+
+type Piece struct {
+    piece models.Piece
 }
 
 func NewGame() *Game {
     return &Game{}
 }
+
+func NewModel() *Piece {
+    return &Piece{}
+}
+
 func (g *Game) init() error {
+    g.p = NewModel()
     return termbox.Init()
 }
 
@@ -241,8 +251,8 @@ func (g *Game) run() {
 
     go keyEventLoop(kch)
     termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-    g.initGame()
-    g.drawInit()
+    g.p.initGame()
+    g.p.drawInit()
     var timer time.Ticker
     for {
         select {
@@ -250,25 +260,25 @@ func (g *Game) run() {
             switch k {
             case termbox.KeyEsc, termbox.KeyCtrlC: //ゲーム終了
                 timer.Stop()
-                g.p.End = true
+                g.p.piece.End = true
                 return
             case termbox.KeySpace, termbox.KeyEnter: //ゲームスタート
-                if g.p.End {
-                    g.p.End = false
-                    timer = *time.NewTicker(time.Duration(g.p.Span) * time.Millisecond)
-                    drawPiece(g.p)
+                if g.p.piece.End {
+                    g.p.piece.End = false
+                    timer = *time.NewTicker(time.Duration(g.p.piece.Span) * time.Millisecond)
+                    g.p.drawPiece()
                 }
                 break
             case termbox.KeyArrowLeft: //ひだり
-                if g.p.End {
+                if g.p.piece.End {
                     f := true
-                    for i := range g.p.TargetOccupancy {
+                    for i := range g.p.piece.TargetOccupancy {
                         if f {
-                            if g.p.TargetOccupancy[i].X <= 1 {
+                            if g.p.piece.TargetOccupancy[i].X <= 1 {
                                 f = false
                             } else {
-                                for j := range g.p.Occupancy {
-                                    if g.p.TargetOccupancy[i].X == g.p.Occupancy[j].X+1 && g.p.TargetOccupancy[i].Y == g.p.Occupancy[j].Y {
+                                for j := range g.p.piece.Occupancy {
+                                    if g.p.piece.TargetOccupancy[i].X == g.p.piece.Occupancy[j].X+1 && g.p.piece.TargetOccupancy[i].Y == g.p.piece.Occupancy[j].Y {
                                         f = false
                                     }
                                 }
@@ -276,24 +286,24 @@ func (g *Game) run() {
                         }
                     }
                     if f {
-                        for i := range g.p.TargetOccupancy {
-                            g.p.TargetOccupancy[i].X--
+                        for i := range g.p.piece.TargetOccupancy {
+                            g.p.piece.TargetOccupancy[i].X--
                         }
                         timer.Stop()
-                        timer = *time.NewTicker(time.Duration(g.p.Span) * time.Millisecond)
+                        timer = *time.NewTicker(time.Duration(g.p.piece.Span) * time.Millisecond)
                     }
-                    drawPiece(g.p)
+                    g.p.drawPiece()
                 }
                 break
             case termbox.KeyArrowRight: //みぎ
                 f := true
-                for i := range g.p.TargetOccupancy {
+                for i := range g.p.piece.TargetOccupancy {
                     if f {
-                        if g.p.TargetOccupancy[i].X >= models.WIDTH-1 {
+                        if g.p.piece.TargetOccupancy[i].X >= models.WIDTH-1 {
                             f = false
                         } else {
-                            for j := range g.p.Occupancy {
-                                if g.p.TargetOccupancy[i].X == g.p.Occupancy[j].X-1 && g.p.TargetOccupancy[i].Y == g.p.Occupancy[j].Y {
+                            for j := range g.p.piece.Occupancy {
+                                if g.p.piece.TargetOccupancy[i].X == g.p.piece.Occupancy[j].X-1 && g.p.piece.TargetOccupancy[i].Y == g.p.piece.Occupancy[j].Y {
                                     f = false
                                 }
                             }
@@ -301,23 +311,23 @@ func (g *Game) run() {
                     }
                 }
                 if f {
-                    for i := range g.p.TargetOccupancy {
-                        g.p.TargetOccupancy[i].X++
+                    for i := range g.p.piece.TargetOccupancy {
+                        g.p.piece.TargetOccupancy[i].X++
                     }
                     timer.Stop()
-                    timer = *time.NewTicker(time.Duration(g.p.Span) * time.Millisecond)
+                    timer = *time.NewTicker(time.Duration(g.p.piece.Span) * time.Millisecond)
                 }
-                drawPiece(g.p)
+                g.p.drawPiece()
                 break
             case termbox.KeyArrowDown: //した
                 f := true
-                for i := range g.p.TargetOccupancy {
+                for i := range g.p.piece.TargetOccupancy {
                     if f {
-                        if g.p.TargetOccupancy[i].Y >= models.HEIGHT-1 {
+                        if g.p.piece.TargetOccupancy[i].Y >= models.HEIGHT-1 {
                             f = false
                         } else {
-                            for j := range g.p.Occupancy {
-                                if g.p.TargetOccupancy[i].X == g.p.Occupancy[j].X && g.p.TargetOccupancy[i].Y == g.p.Occupancy[j].Y-1 {
+                            for j := range g.p.piece.Occupancy {
+                                if g.p.piece.TargetOccupancy[i].X == g.p.piece.Occupancy[j].X && g.p.piece.TargetOccupancy[i].Y == g.p.piece.Occupancy[j].Y-1 {
                                     f = false
                                 }
                             }
@@ -325,37 +335,37 @@ func (g *Game) run() {
                     }
                 }
                 if f {
-                    for i := range g.p.TargetOccupancy {
-                        g.p.TargetOccupancy[i].Y++
+                    for i := range g.p.piece.TargetOccupancy {
+                        g.p.piece.TargetOccupancy[i].Y++
                     }
                     timer.Stop()
-                    timer = *time.NewTicker(time.Duration(g.p.Span) * time.Millisecond)
+                    timer = *time.NewTicker(time.Duration(g.p.piece.Span) * time.Millisecond)
                 }
-                drawPiece(g.p)
+                g.p.drawPiece()
                 break
             case termbox.KeyArrowUp: //うえ
                 var f bool
-                f = g.rotationPiece()
+                f = g.p.rotationPiece()
                 if !f {
                     timer.Stop()
-                    timer = *time.NewTicker(time.Duration(g.p.Span) * time.Millisecond)
+                    timer = *time.NewTicker(time.Duration(g.p.piece.Span) * time.Millisecond)
                 }
-                drawPiece(g.p)
+                g.p.drawPiece()
                 break
             }
             break
         case <-timer.C: //タイマーイベント
             timer.Stop()
-            g.checkCollision()
-            if g.p.End == false {
+            g.p.checkCollision()
+            if g.p.piece.End == false {
                 f := true
-                for i := range g.p.TargetOccupancy {
+                for i := range g.p.piece.TargetOccupancy {
                     if f {
-                        if g.p.TargetOccupancy[i].Y >= models.HEIGHT-1 {
+                        if g.p.piece.TargetOccupancy[i].Y >= models.HEIGHT-1 {
                             f = false
                         } else {
-                            for j := range g.p.Occupancy {
-                                if g.p.TargetOccupancy[i].X == g.p.Occupancy[j].X && g.p.TargetOccupancy[i].Y == g.p.Occupancy[j].Y-1 {
+                            for j := range g.p.piece.Occupancy {
+                                if g.p.piece.TargetOccupancy[i].X == g.p.piece.Occupancy[j].X && g.p.piece.TargetOccupancy[i].Y == g.p.piece.Occupancy[j].Y-1 {
                                     f = false
                                 }
                             }
@@ -363,16 +373,16 @@ func (g *Game) run() {
                     }
                 }
                 if f {
-                    for i := range g.p.TargetOccupancy {
-                        g.p.TargetOccupancy[i].Y += g.p.Vector.Y
+                    for i := range g.p.piece.TargetOccupancy {
+                        g.p.piece.TargetOccupancy[i].Y += g.p.piece.Vector.Y
                     }
                 }
 
-                drawPiece(g.p)
-                timer = *time.NewTicker(time.Duration(g.p.Span) * time.Millisecond)
-            } else if g.p.End == true {
-                g.initGame()
-                g.drawInit()
+                g.p.drawPiece()
+                timer = *time.NewTicker(time.Duration(g.p.piece.Span) * time.Millisecond)
+            } else if g.p.piece.End == true {
+                g.p.initGame()
+                g.p.drawInit()
             }
             break
         default:
