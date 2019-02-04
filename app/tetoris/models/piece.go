@@ -1,4 +1,4 @@
-package models
+package tetoris
 
 import (
 	"sync"
